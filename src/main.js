@@ -35,10 +35,10 @@ function onWindowResize() {
     canvas.render.setSize(window.innerWidth, window.innerHeight);
 }
 
-function createFlyControls(dummy) {
-    const flyControls = new THREE.FlyControls(dummy, canvas.render.domElement);
-    flyControls.movementSpeed = 10;
-    flyControls.rollSpeed = 1;
+function createFlyControls(aircraft) {
+    const flyControls = new THREE.FlyControls(aircraft, canvas.render.domElement);
+    flyControls.movementSpeed = 2;
+    flyControls.rollSpeed = 0.5;
 
     return flyControls;
 }
@@ -77,7 +77,7 @@ function drawAirCraftModel(){
 }
 
 function drawSandroToLookAt() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/uLzLJYY.png");
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/9FcL47dh.jpg");
     var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     var cube = new THREE.Mesh(geometry, material);
