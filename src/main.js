@@ -35,10 +35,9 @@ function onWindowResize() {
     canvas.render.setSize(window.innerWidth, window.innerHeight);
 }
 
-function createFlyControls() {
-    const flyControls = new THREE.FlyControls(canvas.camera, canvas.render.domElement);
-    flyControls.dragToLook = true;
-    flyControls.movementSpeed = 1;
+function createFlyControls(dummy) {
+    const flyControls = new THREE.FlyControls(dummy, canvas.render.domElement);
+    flyControls.movementSpeed = 10;
     flyControls.rollSpeed = 1;
 
     return flyControls;
@@ -48,10 +47,33 @@ function main() {
     drawLights();
     drawGround();
     drawSandroToLookAt();
-    canvas.controls = createFlyControls();
+    drawAirCraft();
+
     window.addEventListener('resize', onWindowResize, false);
 
     canvas.draw();
+}
+
+function drawAirCraft() {
+    var dummy = new THREE.Object3D();
+    canvas.scene.add(dummy);
+
+    var model = drawAirCraftModel()
+
+    dummy.add(model);
+
+    dummy.add(canvas.camera);
+
+    canvas.controls = createFlyControls(dummy);
+}
+
+function drawAirCraftModel(){
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/uLzLJYY.png");
+    var geometry = new THREE.BoxBufferGeometry(1, 0.25, 1);
+    var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+    var cube = new THREE.Mesh(geometry, material);
+    cube.position.set(0, 0.5, 2);
+    return cube;
 }
 
 function drawSandroToLookAt() {
@@ -59,7 +81,7 @@ function drawSandroToLookAt() {
     var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     var cube = new THREE.Mesh(geometry, material);
-    cube.position.y = 0.5;
+    cube.position.set(2,0.5,0);
     canvas.scene.add(cube);
 }
 
