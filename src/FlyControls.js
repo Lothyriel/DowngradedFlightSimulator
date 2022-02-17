@@ -22,7 +22,6 @@
 
 			this.movementSpeed = 1.0;
 			this.rollSpeed = 0.005;
-			this.dragToLook = false;
 			this.autoForward = false; // disable default target object behavior
 			// internals
 
@@ -31,7 +30,6 @@
 			const lastQuaternion = new THREE.Quaternion();
 			const lastPosition = new THREE.Vector3();
 			this.tmpQuaternion = new THREE.Quaternion();
-			this.mouseStatus = 0;
 			this.moveState = {
 				up: 0,
 				down: 0,
@@ -183,76 +181,6 @@
 
 			};
 
-			this.mousedown = function ( event ) {
-
-				if ( this.dragToLook ) {
-
-					this.mouseStatus ++;
-
-				} else {
-
-					switch ( event.button ) {
-
-						case 0:
-							this.moveState.forward = 1;
-							break;
-
-						case 2:
-							this.moveState.back = 1;
-							break;
-
-					}
-
-					this.updateMovementVector();
-
-				}
-
-			};
-
-			this.mousemove = function ( event ) {
-
-				if ( ! this.dragToLook || this.mouseStatus > 0 ) {
-
-					const container = this.getContainerDimensions();
-					const halfWidth = container.size[ 0 ] / 2;
-					const halfHeight = container.size[ 1 ] / 2;
-					this.moveState.yawLeft = - ( event.pageX - container.offset[ 0 ] - halfWidth ) / halfWidth;
-					this.moveState.pitchDown = ( event.pageY - container.offset[ 1 ] - halfHeight ) / halfHeight;
-					this.updateRotationVector();
-
-				}
-
-			};
-
-			this.mouseup = function ( event ) {
-
-				if ( this.dragToLook ) {
-
-					this.mouseStatus --;
-					this.moveState.yawLeft = this.moveState.pitchDown = 0;
-
-				} else {
-
-					switch ( event.button ) {
-
-						case 0:
-							this.moveState.forward = 0;
-							break;
-
-						case 2:
-							this.moveState.back = 0;
-							break;
-
-					}
-
-					this.updateMovementVector();
-
-				}
-
-				this.updateRotationVector();
-
-			};
-
 			this.update = function ( delta ) {
 
 				const moveMult = delta * scope.movementSpeed;
@@ -313,28 +241,16 @@
 			this.dispose = function () {
 
 				this.domElement.removeEventListener( 'contextmenu', contextmenu );
-				this.domElement.removeEventListener( 'mousedown', _mousedown );
-				this.domElement.removeEventListener( 'mousemove', _mousemove );
-				this.domElement.removeEventListener( 'mouseup', _mouseup );
 				window.removeEventListener( 'keydown', _keydown );
 				window.removeEventListener( 'keyup', _keyup );
 
 			};
-
-			const _mousemove = this.mousemove.bind( this );
-
-			const _mousedown = this.mousedown.bind( this );
-
-			const _mouseup = this.mouseup.bind( this );
 
 			const _keydown = this.keydown.bind( this );
 
 			const _keyup = this.keyup.bind( this );
 
 			this.domElement.addEventListener( 'contextmenu', contextmenu );
-			this.domElement.addEventListener( 'mousemove', _mousemove );
-			this.domElement.addEventListener( 'mousedown', _mousedown );
-			this.domElement.addEventListener( 'mouseup', _mouseup );
 			window.addEventListener( 'keydown', _keydown );
 			window.addEventListener( 'keyup', _keyup );
 			this.updateMovementVector();
