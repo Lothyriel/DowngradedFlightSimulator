@@ -52,7 +52,6 @@
 				if ( event.altKey ) {
 
 					return;
-
 				}
 
 				switch ( event.code ) {
@@ -68,22 +67,6 @@
 
 					case 'KeyS':
 						this.moveState.back = 1;
-						break;
-
-					case 'KeyA':
-						this.moveState.left = 1;
-						break;
-
-					case 'KeyD':
-						this.moveState.right = 1;
-						break;
-
-					case 'KeyR':
-						this.moveState.up = 1;
-						break;
-
-					case 'KeyF':
-						this.moveState.down = 1;
 						break;
 
 					case 'ArrowUp':
@@ -132,22 +115,6 @@
 
 					case 'KeyS':
 						this.moveState.back = 0;
-						break;
-
-					case 'KeyA':
-						this.moveState.left = 0;
-						break;
-
-					case 'KeyD':
-						this.moveState.right = 0;
-						break;
-
-					case 'KeyR':
-						this.moveState.up = 0;
-						break;
-
-					case 'KeyF':
-						this.moveState.down = 0;
 						break;
 
 					case 'ArrowUp':
