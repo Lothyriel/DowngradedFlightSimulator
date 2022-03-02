@@ -17,7 +17,6 @@ function configCanvas() {
     let scene = new THREE.Scene();
 
     let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0.5, 5);
 
     let render = new THREE.WebGLRenderer();
     render.setSize(window.innerWidth, window.innerHeight);
@@ -35,54 +34,70 @@ function onWindowResize() {
     canvas.render.setSize(window.innerWidth, window.innerHeight);
 }
 
-function createFlyControls(aircraft) {
-    const flyControls = new THREE.FlyControls(aircraft, canvas.render.domElement);
-    flyControls.movementSpeed = 2;
-    flyControls.rollSpeed = 0.5;
-
-    return flyControls;
-}
-
 function main() {
+    drawThrustMeter();
     drawLights();
     drawGround();
-    drawSandroToLookAt();
+    drawNegosToLookAt();
     drawAirCraft();
 
     window.addEventListener('resize', onWindowResize, false);
 
     canvas.draw();
 }
+function drawThrustMeter()
+{
+    const info = document.createElement( 'div' );
+	info.style.position = 'absolute';
+	info.style.top = '30px';
+	info.style.width = '100%';
+	info.style.textAlign = 'center';
+	info.style.color = '#fff';
+	info.style.fontWeight = 'bold';
+	info.style.backgroundColor = 'transparent';
+	info.style.zIndex = '1';
+	info.style.fontFamily = 'Monospace';
+	document.body.appendChild( info );
+
+    canvas.thrustMeter = info;
+}
 
 function drawAirCraft() {
-    var dummy = new THREE.Object3D();
-    canvas.scene.add(dummy);
-
     var model = drawAirCraftModel()
+    canvas.scene.add(model);
 
-    dummy.add(model);
+    model.add(canvas.camera);
 
-    dummy.add(canvas.camera);
-
-    canvas.controls = createFlyControls(dummy);
+    canvas.controls = new THREE.FlyControls(model, canvas.render.domElement)
 }
 
-function drawAirCraftModel(){
+function drawAirCraftModel() {
     var texture = new THREE.TextureLoader().load("https://i.imgur.com/uLzLJYY.png");
-    var geometry = new THREE.BoxBufferGeometry(1, 0.25, 1);
+    var frameGeometry = new THREE.BoxBufferGeometry(1, 0.25, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-    var cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 0.5, 2);
-    return cube;
+    var frame = new THREE.Mesh(frameGeometry, material);
+
+    var wingsGeometry = new THREE.BoxBufferGeometry(5, 0.05, 1);
+    var wings = new THREE.Mesh(wingsGeometry, material);
+
+    frame.add(wings);
+    frame.position.set(0, 0.25, 2);
+    return frame;
 }
 
-function drawSandroToLookAt() {
+function drawNegosToLookAt() {
     var texture = new THREE.TextureLoader().load("https://i.imgur.com/9FcL47dh.jpg");
     var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-    var cube = new THREE.Mesh(geometry, material);
-    cube.position.set(2,0.5,0);
-    canvas.scene.add(cube);
+
+    const delimitation = 100;
+    for (let i = -delimitation; i < delimitation; i += 10) {
+        for (let x = -delimitation; x < delimitation; x += 10) {
+            var cube = new THREE.Mesh(geometry, material);
+            cube.position.set(Math.random()*i + 2, 0.5, Math.random()*x - 5);
+            canvas.scene.add(cube);
+        }
+    }
 }
 
 function drawGround() {
@@ -90,6 +105,8 @@ function drawGround() {
     var mat = new THREE.MeshBasicMaterial({ color: 0x392a13, side: THREE.DoubleSide });
     var plane = new THREE.Mesh(geo, mat);
     plane.rotateX(- Math.PI / 2);
+    
+    canvas.plane = plane;
     canvas.scene.add(plane);
 }
 
