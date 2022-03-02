@@ -1,4 +1,4 @@
-( function () {
+(function () {
 
 	const _changeEvent = {
 		type: 'change'
@@ -6,13 +6,13 @@
 
 	class FlyControls extends THREE.EventDispatcher {
 
-		constructor( object, domElement ) {
+		constructor(object, domElement) {
 
 			super();
 
-			if ( domElement === undefined ) {
+			if (domElement === undefined) {
 
-				console.warn( 'THREE.FlyControls: The second parameter "domElement" is now mandatory.' );
+				console.warn('THREE.FlyControls: The second parameter "domElement" is now mandatory.');
 				domElement = document;
 
 			}
@@ -24,7 +24,8 @@
 			this.rollSpeed = 0.005;
 			this.autoForward = false; // disable default target object behavior
 			// internals
-
+			
+			this.accelerationConstant = 0.005;
 			const scope = this;
 			const EPS = 0.000001;
 			const lastQuaternion = new THREE.Quaternion();
@@ -40,17 +41,17 @@
 				rollLeft: 0,
 				rollRight: 0
 			};
-			this.moveVector = new THREE.Vector3( 0, 0, 0 );
-			this.rotationVector = new THREE.Vector3( 0, 0, 0 );
+			this.moveVector = new THREE.Vector3(0, 0, 0);
+			this.rotationVector = new THREE.Vector3(0, 0, 0);
 
-			this.keydown = function ( event ) {
+			this.keydown = function (event) {
 
-				if ( event.altKey ) {
+				if (event.altKey) {
 
 					return;
 				}
 
-				switch ( event.code ) {
+				switch (event.code) {
 
 					case 'ShiftLeft':
 					case 'ShiftRight':
@@ -58,11 +59,11 @@
 						break;
 
 					case 'KeyW':
-						this.moveState.forward = 1;
+						//this.accelerate();
 						break;
 
 					case 'KeyS':
-						this.moveState.back = 1;
+						//this.decelerate();
 						break;
 
 					case 'ArrowUp':
@@ -96,9 +97,9 @@
 
 			};
 
-			this.keyup = function ( event ) {
+			this.keyup = function (event) {
 
-				switch ( event.code ) {
+				switch (event.code) {
 
 					case 'ShiftLeft':
 					case 'ShiftRight':
@@ -144,21 +145,21 @@
 
 			};
 
-			this.update = function ( delta ) {
+			this.update = function (delta) {
 
 				const moveMult = delta * scope.movementSpeed;
 				const rotMult = delta * scope.rollSpeed;
-				scope.object.translateX( scope.moveVector.x * moveMult );
-				scope.object.translateY( scope.moveVector.y * moveMult );
-				scope.object.translateZ( scope.moveVector.z * moveMult );
-				scope.tmpQuaternion.set( scope.rotationVector.x * rotMult, scope.rotationVector.y * rotMult, scope.rotationVector.z * rotMult, 1 ).normalize();
-				scope.object.quaternion.multiply( scope.tmpQuaternion );
+				scope.object.translateX(scope.moveVector.x * moveMult);
+				scope.object.translateY(scope.moveVector.y * moveMult);
+				scope.object.translateZ(scope.moveVector.z * moveMult);
+				scope.tmpQuaternion.set(scope.rotationVector.x * rotMult, scope.rotationVector.y * rotMult, scope.rotationVector.z * rotMult, 1).normalize();
+				scope.object.quaternion.multiply(scope.tmpQuaternion);
 
-				if ( lastPosition.distanceToSquared( scope.object.position ) > EPS || 8 * ( 1 - lastQuaternion.dot( scope.object.quaternion ) ) > EPS ) {
+				if (lastPosition.distanceToSquared(scope.object.position) > EPS || 8 * (1 - lastQuaternion.dot(scope.object.quaternion)) > EPS) {
 
-					scope.dispatchEvent( _changeEvent );
-					lastQuaternion.copy( scope.object.quaternion );
-					lastPosition.copy( scope.object.position );
+					scope.dispatchEvent(_changeEvent);
+					lastQuaternion.copy(scope.object.quaternion);
+					lastPosition.copy(scope.object.position);
 
 				}
 
@@ -166,7 +167,7 @@
 
 			this.updateMovementVector = function () {
 
-				const forward = this.moveState.forward || this.autoForward && ! this.moveState.back ? 1 : 0;
+				const forward = this.moveState.forward || this.autoForward && !this.moveState.back ? 1 : 0;
 				this.moveVector.x = - this.moveState.left + this.moveState.right;
 				this.moveVector.y = - this.moveState.down + this.moveState.up;
 				this.moveVector.z = - forward + this.moveState.back; //console.log( 'move:', [ this.moveVector.x, this.moveVector.y, this.moveVector.z ] );
@@ -183,18 +184,18 @@
 
 			this.getContainerDimensions = function () {
 
-				if ( this.domElement != document ) {
+				if (this.domElement != document) {
 
 					return {
-						size: [ this.domElement.offsetWidth, this.domElement.offsetHeight ],
-						offset: [ this.domElement.offsetLeft, this.domElement.offsetTop ]
+						size: [this.domElement.offsetWidth, this.domElement.offsetHeight],
+						offset: [this.domElement.offsetLeft, this.domElement.offsetTop]
 					};
 
 				} else {
 
 					return {
-						size: [ window.innerWidth, window.innerHeight ],
-						offset: [ 0, 0 ]
+						size: [window.innerWidth, window.innerHeight],
+						offset: [0, 0]
 					};
 
 				}
@@ -202,33 +203,39 @@
 			};
 
 			this.dispose = function () {
-
-				this.domElement.removeEventListener( 'contextmenu', contextmenu );
-				window.removeEventListener( 'keydown', _keydown );
-				window.removeEventListener( 'keyup', _keyup );
-
+				this.domElement.removeEventListener('contextmenu', contextmenu);
+				window.removeEventListener('keydown', _keydown);
+				window.removeEventListener('keyup', _keyup);
 			};
 
-			const _keydown = this.keydown.bind( this );
+			const _keydown = this.keydown.bind(this);
 
-			const _keyup = this.keyup.bind( this );
+			const _keyup = this.keyup.bind(this);
 
-			this.domElement.addEventListener( 'contextmenu', contextmenu );
-			window.addEventListener( 'keydown', _keydown );
-			window.addEventListener( 'keyup', _keyup );
+			this.domElement.addEventListener('contextmenu', contextmenu);
+			window.addEventListener('keydown', _keydown);
+			window.addEventListener('keyup', _keyup);
 			this.updateMovementVector();
 			this.updateRotationVector();
 
 		}
 
+		decelerate() {
+			this.moveState.back -= this.accelerationConstant;
+			if (this.moveState.back < 0)
+				this.moveState.back = 0;
+		}
+
+		accelerate() {
+			this.moveState.forward += this.accelerationConstant;
+			if (this.moveState.forward > 1)
+				this.moveState.forward = 1;
+		}
 	}
 
-	function contextmenu( event ) {
-
+	function contextmenu(event) {
 		event.preventDefault();
-
 	}
 
 	THREE.FlyControls = FlyControls;
-
-} )();
+})();
