@@ -31,10 +31,6 @@
 			const lastPosition = new THREE.Vector3();
 			this.tmpQuaternion = new THREE.Quaternion();
 			this.moveState = {
-				up: 0,
-				down: 0,
-				left: 0,
-				right: 0,
 				forward: 0,
 				back: 0,
 				pitchUp: 0,
