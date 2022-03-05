@@ -8,7 +8,8 @@ class Canvas {
     }
     draw() {
         this.render.render(this.scene, this.camera);
-        this.controls.update(0.01);
+        this.flyControls.update(0.01);
+        //canvas.controls.target.copy(canvas.model.position);
         requestAnimationFrame(this.draw);
     }
 }
@@ -18,7 +19,9 @@ function configCanvas() {
 
     let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-    let render = new THREE.WebGLRenderer();
+    camera.position.set(0, 1, 5);
+
+    let render = new THREE.WebGLRenderer({ antialias: true });
     render.setSize(window.innerWidth, window.innerHeight);
     render.setClearColor(0x3e7999, 1);
 
@@ -45,19 +48,18 @@ function main() {
 
     canvas.draw();
 }
-function drawThrustMeter()
-{
-    const info = document.createElement( 'div' );
-	info.style.position = 'absolute';
-	info.style.top = '30px';
-	info.style.width = '100%';
-	info.style.textAlign = 'center';
-	info.style.color = '#fff';
-	info.style.fontWeight = 'bold';
-	info.style.backgroundColor = 'transparent';
-	info.style.zIndex = '1';
-	info.style.fontFamily = 'Monospace';
-	document.body.appendChild( info );
+function drawThrustMeter() {
+    const info = document.createElement('div');
+    info.style.position = 'absolute';
+    info.style.top = '30px';
+    info.style.width = '100%';
+    info.style.textAlign = 'center';
+    info.style.color = '#fff';
+    info.style.fontWeight = 'bold';
+    info.style.backgroundColor = 'transparent';
+    info.style.zIndex = '1';
+    info.style.fontFamily = 'Monospace';
+    document.body.appendChild(info);
 
     canvas.thrustMeter = info;
 }
@@ -66,9 +68,15 @@ function drawAirCraft() {
     var model = drawAirCraftModel()
     canvas.scene.add(model);
 
+    canvas.model = model;
     model.add(canvas.camera);
 
-    canvas.controls = new THREE.FlyControls(model, canvas.render.domElement)
+    //let controls = new THREE.OrbitControls(canvas.camera, canvas.render.domElement);
+    //controls.position.set(0, 0, 5);
+    //controls.enablePan = false;
+    //canvas.controls = controls;
+
+    canvas.flyControls = new THREE.FlyControls(model);
 }
 
 function drawAirCraftModel() {
@@ -81,32 +89,42 @@ function drawAirCraftModel() {
     var wings = new THREE.Mesh(wingsGeometry, material);
 
     frame.add(wings);
-    frame.position.set(0, 0.25, 2);
+    let old = 0.25;
+    frame.position.set(0, 25, 2);
     return frame;
 }
 
 function drawNegosToLookAt() {
     var texture = new THREE.TextureLoader().load("https://i.imgur.com/9FcL47dh.jpg");
-    var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
+    var geometry = new THREE.BoxBufferGeometry(4, 10, 4);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
 
     const delimitation = 100;
+    const initialLimits = 10;
     for (let i = -delimitation; i < delimitation; i += 10) {
         for (let x = -delimitation; x < delimitation; x += 10) {
+            if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
+                continue;
             var cube = new THREE.Mesh(geometry, material);
-            cube.position.set(Math.random()*i + 2, 0.5, Math.random()*x - 5);
+            cube.position.set(i + Math.random() * i * 5, 5, x + Math.random() * x * 5);
             canvas.scene.add(cube);
         }
     }
 }
 
 function drawGround() {
-    var geo = new THREE.PlaneBufferGeometry(2000, 2000, 8, 8);
-    var mat = new THREE.MeshBasicMaterial({ color: 0x392a13, side: THREE.DoubleSide });
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/NirT2E0h.jpg");
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.x = 800;
+    texture.repeat.y = 800;
+    var geo = new THREE.PlaneBufferGeometry(10000, 10000, 8, 8);
+    var mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     var plane = new THREE.Mesh(geo, mat);
     plane.rotateX(- Math.PI / 2);
-    
-    canvas.plane = plane;
+
+    canvas.ground = plane;
+
     canvas.scene.add(plane);
 }
 

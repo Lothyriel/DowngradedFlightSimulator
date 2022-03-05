@@ -4,34 +4,29 @@
 	};
 
 	class FlyControls extends THREE.EventDispatcher {
-		constructor(object, domElement) {
+		constructor(object) {
 			super();
 
-			if (domElement === undefined) {
-				console.warn('THREE.FlyControls: The second parameter "domElement" is now mandatory.');
-				domElement = document;
-			}
-
-			this.object = object;
-			this.domElement = domElement; // API
+			//constants
+			this.gravity = 0.75;
+			this.airDensity = 1.225;	//i could make air density based on altitude (Y)
+			this.frameArea = 1.5;
 
 			this.dragCoefficient = 0.027;
-			this.airDensity = 1.225;
-			this.constanteSecreta = 4.5;
 
-			this.drag = function (speed) {
-				return (1 / 2) * this.dragCoefficient * this.airDensity * this.constanteSecreta * Math.pow(speed, 2);
-			}
+			this.liftCoefficient = 0.008;
 
-			this.maxThrust = 1;
+			this.maxThrust = 3.5;
 			this.thrust = 0;
-
-			this.speed = 0;
 			this.rollSpeed = 0.75;
+			this.accelerationConstant = this.maxThrust / 100;
+
+			//variables
+			this.speed = 0;
+			this.yVelocity = 0;
+
 			// internals
-
-			this.accelerationConstant = 0.010;
-
+			this.object = object;
 			const scope = this;
 			const EPS = 0.000001;
 			const lastQuaternion = new THREE.Quaternion();
@@ -56,9 +51,6 @@
 			this.rotationVector = new THREE.Vector3(0, 0, 0);
 
 			this.keydown = function (event) {
-				if (event.altKey)
-					return;
-
 				switch (event.code) {
 					case 'KeyC':
 						this.moveState.thrustUp = 1;
@@ -91,10 +83,10 @@
 					case 'KeyD':
 						this.moveState.rollRight = 1;
 						break;
+					case 'Escape':
+						this.changeCamera();
+						break;
 				}
-
-				this.updateMovementVector();
-				this.updateRotationVector();
 			};
 
 			this.keyup = function (event) {
@@ -131,27 +123,25 @@
 						this.moveState.rollRight = 0;
 						break;
 				}
-
-				this.updateMovementVector();
-				this.updateRotationVector();
 			};
 
 			this.update = function (delta) {
-				this.updateThrustMeter();
+				this.updateMovementVector();
+				this.updateRotationVector();
 				this.accelerate(delta);
+				this.climb();
+				this.detectCollision();
 				this.roll();
-				this.lift();
+				this.updateThrustMeter();
 
 				const rotMult = delta * scope.rollSpeed;
 				const moveMult = delta * scope.speed;
 
-				console.log(scope.rotationVector);
-
 				scope.object.translateX(scope.moveVector.x * moveMult);
 				scope.object.translateY(scope.moveVector.y * moveMult);
 				scope.object.translateZ(scope.moveVector.z * moveMult);
-				
-				scope.tmpQuaternion.set(scope.rotationVector.x * rotMult, scope.rotationVector.y * rotMult/7.5, scope.rotationVector.z * rotMult, 1).normalize();
+
+				scope.tmpQuaternion.set(scope.rotationVector.x * rotMult, scope.rotationVector.y * rotMult / 7.5, scope.rotationVector.z * rotMult, 1).normalize();
 				scope.object.quaternion.multiply(scope.tmpQuaternion);
 
 				if (lastPosition.distanceToSquared(scope.object.position) > EPS || 8 * (1 - lastQuaternion.dot(scope.object.quaternion)) > EPS) {
@@ -164,47 +154,43 @@
 			this.updateMovementVector = function () {
 				this.moveVector.x = - this.moveState.left + this.moveState.right;
 				this.moveVector.y = - this.moveState.down + this.moveState.up;
-				this.moveVector.z = - this.speed + this.moveState.back; //console.log( 'move:', [ this.moveVector.x, this.moveVector.y, this.moveVector.z ] );
+				this.moveVector.z = - this.speed + this.moveState.back;
 			};
 
 			this.updateRotationVector = function () {
 				this.rotationVector.x = - this.moveState.pitchDown + this.moveState.pitchUp;
 				this.rotationVector.y = - this.moveState.yawRight + this.moveState.yawLeft;
-				this.rotationVector.z = - this.moveState.rollRight + this.moveState.rollLeft; //console.log( 'rotate:', [ this.rotationVector.x, this.rotationVector.y, this.rotationVector.z ] );
+				this.rotationVector.z = - this.moveState.rollRight + this.moveState.rollLeft;
 			};
 
-			this.getContainerDimensions = function () {
-
-				if (this.domElement != document) {
-					return {
-						size: [this.domElement.offsetWidth, this.domElement.offsetHeight],
-						offset: [this.domElement.offsetLeft, this.domElement.offsetTop]
-					};
-				} else {
-
-					return {
-						size: [window.innerWidth, window.innerHeight],
-						offset: [0, 0]
-					};
-				}
-			};
-
-			this.dispose = function () {
-				this.domElement.removeEventListener('contextmenu', contextmenu);
-				window.removeEventListener('keydown', _keydown);
-				window.removeEventListener('keyup', _keyup);
-			};
-
+			this.drag = function (speed) {
+				/*The drag equation states that drag is equal to the
+				p: the density of the fluid times
+				v squared: the speed of the object relative to the fluid times
+				A: the cross sectional area times
+				C: the drag coefficient – a dimensionless number.*/
+				return (1 / 2) * this.airDensity * this.dragCoefficient * this.frameArea * Math.pow(speed, 2);
+			}
+			this.lift = function (speed) {
+				/*The lift equation states that lift L is equal to the 
+				lift coefficient Cl 
+				times the density r 
+				times half of the velocity V squared 
+				times the wing area A.*/
+				//get based on AOA
+				return (1 / 2) * this.airDensity * this.liftCoefficient * this.frameArea * Math.pow(speed, 2);
+			}
 			const _keydown = this.keydown.bind(this);
 
 			const _keyup = this.keyup.bind(this);
 
-			this.domElement.addEventListener('contextmenu', contextmenu);
 			window.addEventListener('keydown', _keydown);
 			window.addEventListener('keyup', _keyup);
-			this.updateMovementVector();
-			this.updateRotationVector();
 		}
+		changeCamera() {
+			canvas.camera.position.copy(this.object.position);
+		}
+
 		updateThrustMeter() {
 			const thrust = `Thrust: ${(this.thrust / this.maxThrust) * 100}%`;
 			const speed = `Speed: ${this.speed} kn`;
@@ -213,30 +199,34 @@
 		}
 
 		accelerate(delta) {
-			this.thrust += (this.accelerationConstant * (this.moveState.thrustUp - this.moveState.thrustDown));
-			
+			this.thrust += this.accelerationConstant * (this.moveState.thrustUp - this.moveState.thrustDown);
+
 			if (this.thrust > this.maxThrust)
-			this.thrust = this.maxThrust;
+				this.thrust = this.maxThrust;
 			else if (this.thrust < 0)
-			this.thrust = 0;
-			
-			this.speed += this.thrust * delta;
-			
+				this.thrust = 0;
+
 			const drag = this.drag(this.speed);
 			this.currentDrag = drag;
-
-			this.speed += drag * delta;
+			this.speed += (this.thrust - drag) * delta;
 		}
 		roll() {
-			//drift x axis to the angle (between the ground and wings) direction
-		}
-		lift() {
-			//change y by: lift - gravity
-		}
-	}
+			if (this.yVelocity <= 0)
+				return;
 
-	function contextmenu(event) {
-		event.preventDefault();
+			const angle = this.object.quaternion.z * this.object.quaternion.w;
+			this.tmpQuaternion.set(0, angle * 0.005, 0, 1);
+			this.object.quaternion.multiply(this.tmpQuaternion);
+		}
+		climb() {
+			this.yVelocity = this.lift(this.speed) - this.gravity;
+			console.log(this.yVelocity)
+			this.object.position.y += this.yVelocity;
+		}
+		detectCollision() {
+			if (this.object.position.y < 0.125)
+				this.object.position.y = 0.125;
+		}
 	}
 
 	THREE.FlyControls = FlyControls;
