@@ -9,12 +9,10 @@
 
 			//constants
 			this.gravity = 0.75;
-			this.airDensity = 1.225;	//i could make air density based on altitude (Y)
+			this.airDensity = 1.225;	//I could make air density based on altitude (Y)
 			this.frameArea = 1.5;
 
-			this.dragCoefficient = 0.027;
-
-			this.liftCoefficient = 0.008;
+			this.dragCoefficient = 0.035;
 
 			this.maxThrust = 3.5;
 			this.thrust = 0;
@@ -22,8 +20,11 @@
 			this.accelerationConstant = this.maxThrust / 100;
 
 			//variables
-			this.speed = 0;
+			this.velocity = 0;
 			this.yVelocity = 0;
+			this.currentLift = 0;
+			this.aoa = 0;
+			this.bankAngle = 0;
 
 			// internals
 			this.object = object;
@@ -54,6 +55,10 @@
 				switch (event.code) {
 					case 'KeyC':
 						this.moveState.thrustUp = 1;
+						break;
+
+					case 'Enter':
+						this.object.rotateY(-Math.PI);	//remove before flight!!!
 						break;
 
 					case 'KeyV':
@@ -135,7 +140,7 @@
 				this.updateThrustMeter();
 
 				const rotMult = delta * scope.rollSpeed;
-				const moveMult = delta * scope.speed;
+				const moveMult = delta * scope.velocity;
 
 				scope.object.translateX(scope.moveVector.x * moveMult);
 				scope.object.translateY(scope.moveVector.y * moveMult);
@@ -154,7 +159,7 @@
 			this.updateMovementVector = function () {
 				this.moveVector.x = - this.moveState.left + this.moveState.right;
 				this.moveVector.y = - this.moveState.down + this.moveState.up;
-				this.moveVector.z = - this.speed + this.moveState.back;
+				this.moveVector.z = - this.velocity + this.moveState.back;
 			};
 
 			this.updateRotationVector = function () {
@@ -178,24 +183,35 @@
 				times half of the velocity V squared 
 				times the wing area A.*/
 				//get based on AOA
-				return (1 / 2) * this.airDensity * this.liftCoefficient * this.frameArea * Math.pow(speed, 2);
+				return (1 / 2) * this.airDensity * this.liftCoefficient() * this.frameArea * Math.pow(speed, 2);
 			}
+			this.liftCoefficient = function () {
+				console.log(this.object.rotation)
+				this.aoa = this.object.quaternion.x * this.object.quaternion.w;
+				return -this.aoa * 0.01 + 0.0078;
+			}
+			
+			
 			const _keydown = this.keydown.bind(this);
-
 			const _keyup = this.keyup.bind(this);
-
 			window.addEventListener('keydown', _keydown);
 			window.addEventListener('keyup', _keyup);
 		}
 		changeCamera() {
-			canvas.camera.position.copy(this.object.position);
+			canvas.camera.position.copy(this.object.position);	//needs refining
 		}
 
 		updateThrustMeter() {
-			const thrust = `Thrust: ${(this.thrust / this.maxThrust) * 100}%`;
-			const speed = `Speed: ${this.speed} kn`;
-			const drag = `Drag: ${this.currentDrag}`;
-			canvas.thrustMeter.innerHTML = `${thrust}<br>${speed}<br>${drag}`;
+			let info = [];
+
+			info.push(`Thrust: ${(this.thrust / this.maxThrust) * 100}%`);
+			info.push(`Velocity: ${this.velocity} kn`);
+			info.push(`Drag: ${this.currentDrag}`);
+			info.push(`Lift: ${this.currentLift}`);
+			info.push(`AOA: ${this.aoa}`);
+			info.push(`Bank Angle: ${this.bankAngle}`);
+			
+			canvas.thrustMeter.innerHTML = info.join("<br>");
 		}
 
 		accelerate(delta) {
@@ -206,21 +222,22 @@
 			else if (this.thrust < 0)
 				this.thrust = 0;
 
-			const drag = this.drag(this.speed);
-			this.currentDrag = drag;
-			this.speed += (this.thrust - drag) * delta;
+			this.currentDrag = this.drag(this.velocity);
+			this.velocity += (this.thrust - this.currentDrag) * delta;
 		}
 		roll() {
-			if (this.yVelocity <= 0)
-				return;
+			return;
+			this.bankAngle = this.object.rotation.z * this.object.rotation.w;;
 
-			const angle = this.object.quaternion.z * this.object.quaternion.w;
-			this.tmpQuaternion.set(0, angle * 0.005, 0, 1);
+			if (this.currentLift <= this.gravity)
+				return;
+			
+			this.tmpQuaternion.set(0, this.bankAngle * 0.005, 0, 1);
 			this.object.quaternion.multiply(this.tmpQuaternion);
 		}
 		climb() {
-			this.yVelocity = this.lift(this.speed) - this.gravity;
-			console.log(this.yVelocity)
+			this.currentLift = this.lift(this.velocity);
+			this.yVelocity = this.currentLift - this.gravity;
 			this.object.position.y += this.yVelocity;
 		}
 		detectCollision() {
