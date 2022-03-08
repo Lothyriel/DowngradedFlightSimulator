@@ -8,11 +8,11 @@
 			super();
 
 			//constants
-			this.gravity = 0.75;
+			this.gravityForce = -0.75;
 			this.airDensity = 1.225;	//I could make air density based on altitude (Y)
-			this.frameArea = 1.5;
+			this.frameArea = 1;
 
-			this.dragCoefficient = 0.035;
+			this.dragCoefficient = 0.06;
 
 			this.maxThrust = 3.5;
 			this.thrust = 0;
@@ -25,6 +25,7 @@
 			this.currentLift = 0;
 			this.aoa = 0;
 			this.bankAngle = 0;
+			this.falling = 0;
 
 			// internals
 			this.object = object;
@@ -33,6 +34,7 @@
 			const lastQuaternion = new THREE.Quaternion();
 			const lastPosition = new THREE.Vector3();
 			this.tmpQuaternion = new THREE.Quaternion();
+			this.tmpVector3 = new THREE.Vector3();
 			this.moveState = {
 				thrustUp: 0,
 				thrustDown: 0,
@@ -168,30 +170,6 @@
 				this.rotationVector.z = - this.moveState.rollRight + this.moveState.rollLeft;
 			};
 
-			this.drag = function (speed) {
-				/*The drag equation states that drag is equal to the
-				p: the density of the fluid times
-				v squared: the speed of the object relative to the fluid times
-				A: the cross sectional area times
-				C: the drag coefficient – a dimensionless number.*/
-				return (1 / 2) * this.airDensity * this.dragCoefficient * this.frameArea * Math.pow(speed, 2);
-			}
-			this.lift = function (speed) {
-				/*The lift equation states that lift L is equal to the 
-				lift coefficient Cl 
-				times the density r 
-				times half of the velocity V squared 
-				times the wing area A.*/
-				//get based on AOA
-				return (1 / 2) * this.airDensity * this.liftCoefficient() * this.frameArea * Math.pow(speed, 2);
-			}
-			this.liftCoefficient = function () {
-				console.log(this.object.rotation)
-				this.aoa = this.object.quaternion.x * this.object.quaternion.w;
-				return -this.aoa * 0.01 + 0.0078;
-			}
-			
-			
 			const _keydown = this.keydown.bind(this);
 			const _keyup = this.keyup.bind(this);
 			window.addEventListener('keydown', _keydown);
@@ -210,7 +188,7 @@
 			info.push(`Lift: ${this.currentLift}`);
 			info.push(`AOA: ${this.aoa}`);
 			info.push(`Bank Angle: ${this.bankAngle}`);
-			
+
 			canvas.thrustMeter.innerHTML = info.join("<br>");
 		}
 
@@ -225,24 +203,62 @@
 			this.currentDrag = this.drag(this.velocity);
 			this.velocity += (this.thrust - this.currentDrag) * delta;
 		}
-		roll() {
+		roll(delta) {
 			return;
 			this.bankAngle = this.object.rotation.z * this.object.rotation.w;;
 
-			if (this.currentLift <= this.gravity)
+			if (this.currentLift <= this.gravityForce)
 				return;
-			
-			this.tmpQuaternion.set(0, this.bankAngle * 0.005, 0, 1);
+
+			this.tmpQuaternion.set(0, this.bankAngle * delta, 0, 1);
 			this.object.quaternion.multiply(this.tmpQuaternion);
 		}
 		climb() {
 			this.currentLift = this.lift(this.velocity);
-			this.yVelocity = this.currentLift - this.gravity;
+			this.yVelocity = this.gravityForce + this.currentLift;
+			//console.log(this.yVelocity)
 			this.object.position.y += this.yVelocity;
 		}
 		detectCollision() {
-			if (this.object.position.y < 0.125)
+			if (this.object.position.y < 0.125) {
+				this.falling = 0;
 				this.object.position.y = 0.125;
+				this.yVelocity = 0;
+			} else {
+				this.falling = 1;
+			}
+		}
+		drag(speed) {
+			/*The drag equation states that drag is equal to the
+			p: the density of the fluid times
+			v squared: the speed of the object relative to the fluid times
+			A: the cross sectional area times
+			C: the drag coefficient – a dimensionless number.*/
+			return (1 / 2) * this.airDensity * this.dragCoefficient * this.frameArea * Math.pow(speed, 2);
+		}
+		lift(speed) {
+			/*The lift equation states that lift L is equal to the 
+			lift coefficient Cl 
+			times the density r 
+			times half of the velocity V squared 
+			times the wing area A.*/
+			//get based on AOA
+			return (1 / 2) * this.airDensity * this.liftCoefficient() * this.frameArea * Math.pow(speed, 2);
+		}
+		liftCoefficient() {
+			this.aoa = this.object.quaternion.x * this.object.quaternion.w;
+			const x = this.aoa;
+			return 0.0137 +
+				0.0892 * x +
+				-0.134 * Math.pow(x, 2) +
+				-2.62 * Math.pow(x, 3) +
+				0.193 * Math.pow(x, 4) +
+				28.7 * Math.pow(x, 5) +
+				-0.136 * Math.pow(x, 6) +
+				-134 * Math.pow(x, 7) +
+				20.2 * Math.pow(x, 8) +
+				222 * Math.pow(x, 9) +
+				-70.4 * Math.pow(x, 10);
 		}
 	}
 
