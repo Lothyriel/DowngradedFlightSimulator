@@ -80,7 +80,7 @@ function drawAirCraft() {
 }
 
 function drawAirCraftModel() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/uLzLJYY.png");
+    var texture = new THREE.TextureLoader().load('http://127.0.0.1:8080/models/airCraft.png');
     var frameGeometry = new THREE.BoxBufferGeometry(1, 0.25, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     var frame = new THREE.Mesh(frameGeometry, material);
@@ -95,35 +95,46 @@ function drawAirCraftModel() {
 }
 
 function drawNegosToLookAt() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/9FcL47dh.jpg");
-    var geometry = new THREE.BoxBufferGeometry(4, 10, 4);
-    var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+    const loader = new THREE.GLTFLoader();
 
-    const delimitation = 100;
-    const initialLimits = 10;
-    for (let i = -delimitation; i < delimitation; i += 10) {
-        for (let x = -delimitation; x < delimitation; x += 10) {
-            if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
-                continue;
-            var cube = new THREE.Mesh(geometry, material);
-            cube.position.set(i + Math.random() * i * 5, 5, x + Math.random() * x * 5);
-            canvas.scene.add(cube);
+    loader.load('http://127.0.0.1:8080/models/tree/scene.gltf', function (gltf) {
+
+        const model = gltf.scene.clone();
+        const delimitation = 100;
+        const initialLimits = 10;
+        for (let i = -delimitation; i < delimitation; i += 10) {
+            for (let x = -delimitation; x < delimitation; x += 10) {
+                if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
+                    continue;
+                    
+                    model.position.set(i + Math.random() * i * 5, 5, x + Math.random() * x * 5);
+                    model.scale.set(0.01, 0.01, 0.01)
+                canvas.scene.add(model);
+            }
         }
-    }
+
+    }, undefined, function (error) {
+
+        console.warn(error);
+
+    });
 }
 
 function drawGround() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/NirT2E0h.jpg");
+    canvas.textureLoader = new THREE.TextureLoader();
+    var texture = canvas.textureLoader.load('http://127.0.0.1:8080/models/grama.jpg');
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.x = 800;
     texture.repeat.y = 800;
-    var geo = new THREE.PlaneBufferGeometry(10000, 10000, 8, 8);
-    var mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    var geo = new THREE.PlaneBufferGeometry(200, 200, 180, 90);
+    var mat = new THREE.MeshStandardMaterial({
+        map: texture,
+        displacementMap: canvas.textureLoader.load('http://127.0.0.1:8080/models/mapDisplacement.png'),
+        displacementScale: 10
+    });
     var plane = new THREE.Mesh(geo, mat);
     plane.rotateX(- Math.PI / 2);
-
-    canvas.ground = plane;
 
     canvas.scene.add(plane);
 }
