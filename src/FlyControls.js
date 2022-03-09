@@ -8,7 +8,7 @@
 			super();
 
 			//constants
-			this.gravity = 0.75;
+			this.gravity = -0.75;
 			this.airDensity = 1.225;	//i could make air density based on altitude (Y)
 			this.frameArea = 1.5;
 
@@ -45,7 +45,8 @@
 				yawLeft: 0,
 				yawRight: 0,
 				rollLeft: 0,
-				rollRight: 0
+				rollRight: 0,
+				breaking: 0
 			};
 			this.moveVector = new THREE.Vector3(0, 0, 0);
 			this.rotationVector = new THREE.Vector3(0, 0, 0);
@@ -83,8 +84,8 @@
 					case 'KeyD':
 						this.moveState.rollRight = 1;
 						break;
-					case 'Escape':
-						this.changeCamera();
+					case 'Space':
+						this.moveState.breaking = 1;
 						break;
 				}
 			};
@@ -121,6 +122,9 @@
 
 					case 'KeyD':
 						this.moveState.rollRight = 0;
+						break;
+					case 'Space':
+						this.moveState.breaking = 0;
 						break;
 				}
 			};
@@ -187,9 +191,6 @@
 			window.addEventListener('keydown', _keydown);
 			window.addEventListener('keyup', _keyup);
 		}
-		changeCamera() {
-			canvas.camera.position.copy(this.object.position);
-		}
 
 		updateThrustMeter() {
 			const thrust = `Thrust: ${(this.thrust / this.maxThrust) * 100}%`;
@@ -219,13 +220,15 @@
 			this.object.quaternion.multiply(this.tmpQuaternion);
 		}
 		climb() {
-			this.yVelocity = this.lift(this.speed) - this.gravity;
-			console.log(this.yVelocity)
+			this.yVelocity = this.lift(this.speed) + this.gravity;
 			this.object.position.y += this.yVelocity;
 		}
 		detectCollision() {
-			if (this.object.position.y < 0.125)
+			if (this.object.position.y < 0.125) {
 				this.object.position.y = 0.125;
+				if (this.speed > 0.003)
+					this.speed -= 0.01 * this.moveState.breaking;
+			}
 		}
 	}
 

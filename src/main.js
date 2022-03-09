@@ -9,7 +9,6 @@ class Canvas {
     draw() {
         this.render.render(this.scene, this.camera);
         this.flyControls.update(0.01);
-        //canvas.controls.target.copy(canvas.model.position);
         requestAnimationFrame(this.draw);
     }
 }
@@ -41,7 +40,7 @@ function main() {
     drawThrustMeter();
     drawLights();
     drawGround();
-    drawNegosToLookAt();
+    drawBuildingsToLookAt();
     drawAirCraft();
 
     window.addEventListener('resize', onWindowResize, false);
@@ -80,7 +79,7 @@ function drawAirCraft() {
 }
 
 function drawAirCraftModel() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/uLzLJYY.png");
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/KbCU6K1.png");
     var frameGeometry = new THREE.BoxBufferGeometry(1, 0.25, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     var frame = new THREE.Mesh(frameGeometry, material);
@@ -89,24 +88,23 @@ function drawAirCraftModel() {
     var wings = new THREE.Mesh(wingsGeometry, material);
 
     frame.add(wings);
-    let old = 0.25;
-    frame.position.set(0, 25, 2);
+    frame.position.set(0, 0.25, 2);
     return frame;
 }
 
-function drawNegosToLookAt() {
-    var texture = new THREE.TextureLoader().load("https://i.imgur.com/9FcL47dh.jpg");
+function drawBuildingsToLookAt() {
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/7rEnKnv.png");
     var geometry = new THREE.BoxBufferGeometry(4, 10, 4);
-    var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+    var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true});
 
-    const delimitation = 100;
-    const initialLimits = 10;
+    const delimitation = 300;
+    const initialLimits = 30;
     for (let i = -delimitation; i < delimitation; i += 10) {
         for (let x = -delimitation; x < delimitation; x += 10) {
             if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
                 continue;
             var cube = new THREE.Mesh(geometry, material);
-            cube.position.set(i + Math.random() * i * 5, 5, x + Math.random() * x * 5);
+            cube.position.set(i + Math.random() * i * Math.random()+2, 5, x + Math.random() * x * 5);
             canvas.scene.add(cube);
         }
     }
