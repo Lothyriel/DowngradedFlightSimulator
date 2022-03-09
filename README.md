@@ -1,7 +1,7 @@
 # DowngradedFlightSimulator
 Trabalho FInal de Computação Gráfica
 
-Vídeo explicação: https://youtu.be/raPq6CW7hY4
+Vídeo explicação: https://youtu.be/zEh_rrQ-Vf8
 
 Funções Plotadas: https://www.desmos.com/calculator/yw1dp0oxck
 
