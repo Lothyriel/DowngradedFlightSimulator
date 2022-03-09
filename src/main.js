@@ -9,7 +9,6 @@ class Canvas {
     draw() {
         this.render.render(this.scene, this.camera);
         this.flyControls.update(0.01);
-        //canvas.controls.target.copy(canvas.model.position);
         requestAnimationFrame(this.draw);
     }
 }
@@ -41,7 +40,7 @@ function main() {
     drawThrustMeter();
     drawLights();
     drawGround();
-    drawNegosToLookAt();
+    drawBuildingsToLookAt();
     drawAirCraft();
 
     window.addEventListener('resize', onWindowResize, false);
@@ -80,7 +79,7 @@ function drawAirCraft() {
 }
 
 function drawAirCraftModel() {
-    var texture = new THREE.TextureLoader().load('http://127.0.0.1:8080/models/airCraft.png');
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/KbCU6K1.png");
     var frameGeometry = new THREE.BoxBufferGeometry(1, 0.25, 3);
     var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     var frame = new THREE.Mesh(frameGeometry, material);
@@ -89,52 +88,40 @@ function drawAirCraftModel() {
     var wings = new THREE.Mesh(wingsGeometry, material);
 
     frame.add(wings);
-    let old = 0.25;
-    frame.position.set(0, 25, 2);
+    frame.position.set(0, 0.25, 2);
     return frame;
 }
 
-function drawNegosToLookAt() {
-    const loader = new THREE.GLTFLoader();
+function drawBuildingsToLookAt() {
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/7rEnKnv.png");
+    var geometry = new THREE.BoxBufferGeometry(4, 10, 4);
+    var material = new THREE.MeshBasicMaterial({ map: texture, transparent: true});
 
-    loader.load('http://127.0.0.1:8080/models/tree/scene.gltf', function (gltf) {
-
-        const model = gltf.scene.clone();
-        const delimitation = 100;
-        const initialLimits = 10;
-        for (let i = -delimitation; i < delimitation; i += 10) {
-            for (let x = -delimitation; x < delimitation; x += 10) {
-                if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
-                    continue;
-                    
-                    model.position.set(i + Math.random() * i * 5, 5, x + Math.random() * x * 5);
-                    model.scale.set(0.01, 0.01, 0.01)
-                canvas.scene.add(model);
-            }
+    const delimitation = 300;
+    const initialLimits = 30;
+    for (let i = -delimitation; i < delimitation; i += 10) {
+        for (let x = -delimitation; x < delimitation; x += 10) {
+            if (x > -initialLimits && x < initialLimits || i > -initialLimits && i < initialLimits)
+                continue;
+            var cube = new THREE.Mesh(geometry, material);
+            cube.position.set(i + Math.random() * i * Math.random()+2, 5, x + Math.random() * x * 5);
+            canvas.scene.add(cube);
         }
-
-    }, undefined, function (error) {
-
-        console.warn(error);
-
-    });
+    }
 }
 
 function drawGround() {
-    canvas.textureLoader = new THREE.TextureLoader();
-    var texture = canvas.textureLoader.load('http://127.0.0.1:8080/models/grama.jpg');
+    var texture = new THREE.TextureLoader().load("https://i.imgur.com/NirT2E0h.jpg");
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.x = 800;
     texture.repeat.y = 800;
-    var geo = new THREE.PlaneBufferGeometry(200, 200, 180, 90);
-    var mat = new THREE.MeshStandardMaterial({
-        map: texture,
-        displacementMap: canvas.textureLoader.load('http://127.0.0.1:8080/models/mapDisplacement.png'),
-        displacementScale: 10
-    });
+    var geo = new THREE.PlaneBufferGeometry(10000, 10000, 8, 8);
+    var mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     var plane = new THREE.Mesh(geo, mat);
     plane.rotateX(- Math.PI / 2);
+
+    canvas.ground = plane;
 
     canvas.scene.add(plane);
 }
